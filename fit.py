@@ -126,6 +126,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from ac import AutoComplete
+from ac import AutoCompleteVAE
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -177,7 +178,7 @@ dataloaders = {
             for split, mat in normd_dsets.items() }
 #%%
 feature_dim = dsets['train'].shape[1]
-core = AutoComplete(
+core = AutoCompleteVAE(
         indim=feature_dim,
         width=1/args.encoding_ratio,
         n_depth=args.depth,
@@ -221,32 +222,33 @@ if not args.impute_using_saved:
                 datarow = datarow.to(args.device)
 
                 optimizer.zero_grad()
-                with torch.set_grad_enabled(phase == 'train'):
-                    yhat = model(masked_data)
-                    sind = CONT_BINARY_SPLIT
+# import torch.nn.functional as F
 
-                    l_cont, l_binary = torch.zeros(1), torch.zeros(1)
-                    if len(contin_features) != 0:
-                        l_cont = cont_crit((yhat*score_inds)[:,:sind], (datarow*score_inds)[:, :sind])
-                    if len(binary_features) != 0:
-                        binarized = (((datarow)*score_inds)[:, sind:] > 0.5).float()
-                        l_binary = binary_crit(
-                            (yhat*score_inds)[:, sind:],
-                            binarized)
-                    loss = l_cont + l_binary
+            with torch.set_grad_enabled(phase == 'train'):
+                yhat, mean, logvar = model(masked_data)  # Add mean and logvar outputs from the model
+                sind = CONT_BINARY_SPLIT
 
-                    ep_hist['total'] += [loss.item()]
-                    ep_hist['binary'] += [l_binary.item()]
-                    if np.isnan(loss.item()):
-                        print(yhat.isnan().sum())
-                        print(l_cont.item())
-                        print(l_binary.item())
+                l_cont, l_binary = torch.zeros(1), torch.zeros(1)
+                if len(contin_features) != 0:
+                    l_cont = cont_crit((yhat*score_inds)[:,:sind], (datarow*score_inds)[:, :sind])
+                if len(binary_features) != 0:
+                    binarized = (((datarow)*score_inds)[:, sind:] > 0.5).float()
+                    l_binary = binary_crit(
+                        (yhat*score_inds)[:, sind:],
+                        binarized)
+                
+                # Compute KL divergence loss
+                kl_loss = -0.5 * torch.sum(1 + logvar - mean.pow(2) - logvar.exp())
+                
+                # Combine the losses
+                loss = l_cont + l_binary + kl_loss
 
-                if phase == 'train':
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 10.0)
-                    optimizer.step()
-
+                ep_hist['total'] += [loss.item()]
+                ep_hist['binary'] += [l_binary.item()]
+                if np.isnan(loss.item()):
+                    print(yhat.isnan().sum())
+                    print(l_cont.item())
+                    print(l_binary.item())
                 print(f'\r[E{ep+1} {phase} {bi+1}/{len(dset)}] - L%.4f (%.4f %.4f) %.1fs LR:{get_lr()}   ' % (
                     np.mean(ep_hist['total']), l_cont.item(), l_binary.item(),(time() - t_ep)
                 ), end='')
@@ -329,8 +331,10 @@ if args.impute_data_file or args.save_imputed or args.quality:
             datarow[sim_mask] = 0
 
         with torch.no_grad():
+            #TODO: Update this to use the mean and logvar outputs from the model
             yhat = model(datarow)
         sind = CONT_BINARY_SPLIT
+        
         yhat = torch.cat([yhat[:, :sind], torch.sigmoid(yhat[:, sind:])], dim=1)
 
         preds_ls += [yhat.cpu().numpy()]
