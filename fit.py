@@ -1,6 +1,6 @@
 #%% 
-%load_ext autoreload
-%autoreload 2
+# %load_ext autoreload
+# %autoreload 2
 #%%
 import pandas as pd
 from time import time
@@ -33,39 +33,39 @@ class args:
     save_model_path = None
     save_imputed = True
 #%%
-parser = argparse.ArgumentParser(description='AutoComplete')
-parser.add_argument('data_file', type=str, help='CSV file where rows are samples and columns correspond to features.')
-parser.add_argument('--id_name', type=str, default='ID', help='Column in CSV file which is the identifier for the samples.')
-parser.add_argument('--output', type=str, help='The imputed version of the data will be saved as this file. ' +\
-    'If not specified the imputed data will be saved as `imputed_{data_file}` in the same folder as the `data_file`.')
+# parser = argparse.ArgumentParser(description='AutoComplete')
+# parser.add_argument('data_file', type=str, help='CSV file where rows are samples and columns correspond to features.')
+# parser.add_argument('--id_name', type=str, default='ID', help='Column in CSV file which is the identifier for the samples.')
+# parser.add_argument('--output', type=str, help='The imputed version of the data will be saved as this file. ' +\
+#     'If not specified the imputed data will be saved as `imputed_{data_file}` in the same folder as the `data_file`.')
 
-parser.add_argument('--save_model_path', type=str, help='A location to save the imputation model weights. Will default to file_name.pth if not set.', default=None)
+# parser.add_argument('--save_model_path', type=str, help='A location to save the imputation model weights. Will default to file_name.pth if not set.', default=None)
 
-parser.add_argument('--copymask_amount', type=float, default=0.3, help='Probability that a sample will be copy-masked. A range from 10%%~50%% is recommemded.')
-parser.add_argument('--batch_size', type=int, default=2048, help='Batch size for fitting the model.')
-parser.add_argument('--epochs', type=int, default=200, help='Number of epochs.')
-parser.add_argument('--lr', type=float, default=0.1, help='Learning rate for fitting the model. A starting LR between 2~0.1 is recommended.')
-parser.add_argument('--momentum', type=float, default=0.9, help='Momentum for SGD optimizer (default is recommended).')
-parser.add_argument('--val_split', type=float, default=0.8, help='Amount of data to use as a validation split. The validation split is monitored for convergeance.')
-parser.add_argument('--device', type=str, default='cpu:0', help='Device available for torch (use cpu:0 if no GPU available).')
-parser.add_argument('--encoding_ratio', type=float, default=1,
-    help='Size of the centermost encoding dimension as a ratio of # of input features; ' + \
-    'eg. `0.5` would force an encoding by half.')
-parser.add_argument('--depth', type=int, default=1, help='# of fully connected layers between input and centermost deep layer; ' + \
-    'the # of layers beteen the centermost layer and the output layer will be defined equally.')
+# parser.add_argument('--copymask_amount', type=float, default=0.3, help='Probability that a sample will be copy-masked. A range from 10%%~50%% is recommemded.')
+# parser.add_argument('--batch_size', type=int, default=2048, help='Batch size for fitting the model.')
+# parser.add_argument('--epochs', type=int, default=200, help='Number of epochs.')
+# parser.add_argument('--lr', type=float, default=0.1, help='Learning rate for fitting the model. A starting LR between 2~0.1 is recommended.')
+# parser.add_argument('--momentum', type=float, default=0.9, help='Momentum for SGD optimizer (default is recommended).')
+# parser.add_argument('--val_split', type=float, default=0.8, help='Amount of data to use as a validation split. The validation split is monitored for convergeance.')
+# parser.add_argument('--device', type=str, default='cpu:0', help='Device available for torch (use cpu:0 if no GPU available).')
+# parser.add_argument('--encoding_ratio', type=float, default=1,
+#     help='Size of the centermost encoding dimension as a ratio of # of input features; ' + \
+#     'eg. `0.5` would force an encoding by half.')
+# parser.add_argument('--depth', type=int, default=1, help='# of fully connected layers between input and centermost deep layer; ' + \
+#     'the # of layers beteen the centermost layer and the output layer will be defined equally.')
 
-parser.add_argument('--save_imputed', help='Will save an imputed version of the matrix immediately after fitting it.', action='store_true', default=False)
-parser.add_argument('--impute_using_saved', type=str, help='Load trained weights from a saved .pth file to ' + \
-    'impute the data without going through model training.')
-parser.add_argument('--impute_data_file', type=str, help='CSV file where rows are samples and columns correspond to features.')
-parser.add_argument('--seed', type=int, help='A specific seed to use. Can be used to instantiate multiple imputations.', default=-1)
-parser.add_argument('--bootstrap', help='Flag to specify whether the dataset should be bootstrapped for the purpose of fitting.', default=False, action='store_true')
-parser.add_argument('--multiple', type=int, help='If set, this script will save a list of commands which can be run (either in sequence or in parallel) to save mulitple imputations', default=-1)
-parser.add_argument('--quality', help='Applies to the fitting procedure. If set, this script will compute a variance ratio metric and a r^2 metric for each feature to roughly inform the quality of imputation', default=False, action='store_true')
-parser.add_argument('--simulate_missing', help='Specifies the %% of original data to be simulated as missing for r^2 computation.', default=0.01, type=float)
-parser.add_argument('--num_torch_threads', help='Prevents torch from taking up all threads on a device. Can be increased when only running one fit but default can be sufficient.', default=8, type=int)
+# parser.add_argument('--save_imputed', help='Will save an imputed version of the matrix immediately after fitting it.', action='store_true', default=False)
+# parser.add_argument('--impute_using_saved', type=str, help='Load trained weights from a saved .pth file to ' + \
+#     'impute the data without going through model training.')
+# parser.add_argument('--impute_data_file', type=str, help='CSV file where rows are samples and columns correspond to features.')
+# parser.add_argument('--seed', type=int, help='A specific seed to use. Can be used to instantiate multiple imputations.', default=-1)
+# parser.add_argument('--bootstrap', help='Flag to specify whether the dataset should be bootstrapped for the purpose of fitting.', default=False, action='store_true')
+# parser.add_argument('--multiple', type=int, help='If set, this script will save a list of commands which can be run (either in sequence or in parallel) to save mulitple imputations', default=-1)
+# parser.add_argument('--quality', help='Applies to the fitting procedure. If set, this script will compute a variance ratio metric and a r^2 metric for each feature to roughly inform the quality of imputation', default=False, action='store_true')
+# parser.add_argument('--simulate_missing', help='Specifies the %% of original data to be simulated as missing for r^2 computation.', default=0.01, type=float)
+# parser.add_argument('--num_torch_threads', help='Prevents torch from taking up all threads on a device. Can be increased when only running one fit but default can be sufficient.', default=8, type=int)
 
-args = parser.parse_args()
+# args = parser.parse_args()
 #%%
 if args.multiple != -1:
     print('Saving commands for multiple imputations based on the current configs.')
