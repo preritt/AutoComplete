@@ -5,7 +5,7 @@ import numpy as np
 droot = 'datasets/phenotypes'
 #%%
 # the original dataset
-original_data = pd.read_csv(f'{droot}/data.csv').set_index('ID')
+original_data = pd.read_csv(f'/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data.csv').set_index('ID')
 original_data
 #%%
 # part of the dataset where missing values were simulated
@@ -13,7 +13,7 @@ simulated_missing_data = pd.read_csv(f'{droot}/data_test.csv').set_index('ID')
 simulated_missing_data
 # %%
 # the simulated missing values imputed
-imputed_data = pd.read_csv(f'{droot}/imputed_data_test.csv').set_index('ID')
+imputed_data = pd.read_csv(f'/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/imputed_data_test.csv').set_index('ID')
 imputed_data
 # %%
 # gather the r2 score

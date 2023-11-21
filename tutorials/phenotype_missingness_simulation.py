@@ -6,7 +6,7 @@ simulate_missing = 0.01
 #%%
 droot = 'datasets/phenotypes'
 #%%
-db = pd.read_csv(f'{droot}/data.csv', index_col=False).set_index('ID')
+db = pd.read_csv(f'/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data.csv', index_col=False).set_index('ID')
 db
 #%%
 vmat = db.values
@@ -38,9 +38,10 @@ len(fit_inds), len(test_inds)
 fitdb = db.loc[fit_inds]
 testdb = db.loc[test_inds]
 # %%
-fitdb.to_csv(f'{droot}/data_fit.csv')
+fitdb.to_csv(f'/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_fit.csv')
 # %%
-testdb.to_csv(f'{droot}/data_test.csv')
+testdb.to_csv(f'/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_test.csv')
 
 # %%
 print('done')
+# %%
