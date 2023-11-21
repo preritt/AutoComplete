@@ -1,3 +1,6 @@
+#%% 
+%load_ext autoreload
+%autoreload 2
 #%%
 import pandas as pd
 from time import time
@@ -6,17 +9,17 @@ import argparse
 import sys
 #%%
 class args:
-    data_file = 'datasets/mate_female_all/data_nosex.csv'
-    id_name = 'f.eid'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_fit.csv'
+    id_name = 'ID'
     lr = 0.001
     batch_size = 1024
     val_split = 0.8
-    device = 'cuda:1'
-    epochs = 300
+    device = 'cuda:0'
+    epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = 'datasets/mate_female_all/debug.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -104,6 +107,9 @@ if not args.impute_using_saved:
 if args.impute_using_saved or args.save_imputed:
     print('Saving imputed table to:', save_table_name)
 #%%
+import sys
+sys.path.append('..')
+#%%
 import torch
 torch.set_num_threads(args.num_torch_threads)
 import random
@@ -118,6 +124,7 @@ if args.seed != -1:
 from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
+
 from ac import AutoComplete
 from dataset import CopymaskDataset
 #%%
