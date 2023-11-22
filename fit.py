@@ -19,7 +19,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_fit_imputed.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/phenotypes/data_fit_imputed_AEWithMAsk.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -126,6 +126,7 @@ import torch.nn as nn
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from ac import AutoComplete
+from ac import AutoCompleteWithMissingMask
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -177,12 +178,18 @@ dataloaders = {
             for split, mat in normd_dsets.items() }
 #%%
 feature_dim = dsets['train'].shape[1]
-core = AutoComplete(
+# core = AutoComplete(
+#         indim=feature_dim,
+#         width=1/args.encoding_ratio,
+#         n_depth=args.depth,
+#     )
+core = AutoCompleteWithMissingMask(
         indim=feature_dim,
         width=1/args.encoding_ratio,
         n_depth=args.depth,
     )
 model = core.to(args.device)
+
 #%%
 if not args.impute_using_saved:
     cont_crit = nn.MSELoss()
@@ -216,6 +223,12 @@ if not args.impute_using_saved:
 
                 existing_inds = ~nan_inds
                 score_inds = existing_inds
+                # convert existing_inds into same data type as masked_data
+                existing_inds_info = existing_inds.type(masked_data.dtype)
+
+                # if  model.__class__.__name__ == 'AutoCompleteWithMissingMask':
+                #     masked_data = torch.cat([masked_data, existing_inds_info], dim=1)
+                
                 score_inds = score_inds.to(args.device)
                 masked_data = masked_data.to(args.device)
                 datarow = datarow.to(args.device)
