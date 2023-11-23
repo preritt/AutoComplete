@@ -19,11 +19,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = None
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
@@ -129,9 +129,13 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 from ac import AutoComplete
 from ac import AutoCompleteWithMissingMask
 from dataset import CopymaskDataset
+from datasetTest import TestDataset as Test
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
+test_data = pd.read_csv(args.impute_data_file).set_index(args.id_name)
 print(f'Dataset size:', tab.shape[0])
+print(f'Dataset size for test:', test_data.shape[0])
+test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_train_OBS099_unif.csv').set_index(args.id_name)
 #%%
 if args.bootstrap:
     print('Bootstrap mode')
@@ -153,12 +157,14 @@ CONT_BINARY_SPLIT = len(contin_features)
 # %%
 # keep a validation set
 val_ind = int(tab.shape[0]*args.val_split)
-splits = ['train', 'val', 'final']
+splits = ['train', 'val', 'final', 'test']
 dsets = dict(
     train=tab[feature_ord].iloc[:val_ind, :],
     val=tab[feature_ord].iloc[val_ind:, :],
     final=tab[feature_ord],
+    test = test_data[feature_ord]
 )
+dset_test = test_data[feature_ord]
 # %%
 # train_stats = dict(
 #     mean=dsets['train'].mean().values,
@@ -171,13 +177,42 @@ normd_dsets = {
     split: (dsets[split].values - train_stats['mean'])/train_stats['std'] \
         for split in splits }
 # %%
-dataloaders = {
-    split: torch.utils.data.DataLoader(
-        CopymaskDataset(mat, split, copymask_amount=args.copymask_amount),
-        batch_size=args.batch_size,
-        shuffle=split=='train', num_workers=0) \
-            for split, mat in normd_dsets.items() }
-            
+# dataloaders = {
+#     split: torch.utils.data.DataLoader(
+#         CopymaskDataset(mat, split, copymask_amount=args.copymask_amount),
+#         batch_size=args.batch_size,
+#         shuffle=split=='train', num_workers=0) \
+#             for split, mat in normd_dsets.items() }
+# dataloaders = {
+#     split: torch.utils.data.DataLoader(
+#         Test(mat, split, copymask_amount=args.copymask_amount),
+#         batch_size=args.batch_size,
+#         shuffle=split=='train', num_workers=0) \
+#             for split, mat in normd_dsets.items() }
+# dataloaders = {
+#     split: torch.utils.data.DataLoader(
+#         Test(normd_dsets['test'], split, copymask_amount=args.copymask_amount),
+#         batch_size=args.batch_size,
+#         shuffle=False, num_workers=0) \
+#             for split, mat in normd_dsets.items() }
+dataloaders = {}
+
+for split, mat in normd_dsets.items():
+    if split != 'test':
+        dataloaders[split] = torch.utils.data.DataLoader(
+            CopymaskDataset(normd_dsets[split], split, copymask_amount=args.copymask_amount),
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=0
+    )
+    else:
+        dataloaders[split] = torch.utils.data.DataLoader(
+            Test(normd_dsets[split], split, test_data_mask_file.values, copymask_amount=args.copymask_amount),
+            batch_size=args.batch_size,
+            shuffle=False,
+            num_workers=0
+    )
+
 #%%
 feature_dim = dsets['train'].shape[1]
 core = AutoComplete(
@@ -218,6 +253,7 @@ if not args.impute_using_saved:
             dset = dataloaders[phase]
 
             for bi, batch in enumerate(dset):
+                # data with original nans and forcefule nans zeroes, original nan ids, forced nan ids
                 datarow, nan_inds, train_inds = batch
                 datarow = datarow.float()
                 masked_data = datarow.clone().detach()
@@ -420,3 +456,5 @@ if args.impute_data_file or args.save_imputed or args.quality:
         template.to_csv(save_table_name)
 
 print('done')
+
+# %%
