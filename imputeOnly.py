@@ -10,7 +10,7 @@ import sys
 #%%
 class args:
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -19,11 +19,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
@@ -349,10 +349,22 @@ if args.impute_data_file or args.save_imputed or args.quality:
     print(f'(impute) Dataset size:', imptab.shape[0])
 
     mat_imptab = (imptab.values - train_stats['mean'])/train_stats['std']
+    # dset = torch.utils.data.DataLoader(
+    #     CopymaskDataset(mat_imptab, 'final'),
+    #     batch_size=args.batch_size,
+    #     shuffle=False, num_workers=0)
+
+    #     dataloaders[split] = torch.utils.data.DataLoader(
+    #         Test(normd_dsets[split], split, test_data_mask_file.values, copymask_amount=args.copymask_amount),
+    #         batch_size=args.batch_size,
+    #         shuffle=False,
+    #         num_workers=0
+    # )
+
     dset = torch.utils.data.DataLoader(
-        CopymaskDataset(mat_imptab, 'final'),
+        Test(mat_imptab, 'final', test_data_mask_file.values),
         batch_size=args.batch_size,
-        shuffle=False, num_workers=0)
+        shuffle=False, num_workers=0)    
 
     preds_ls = []
 
@@ -376,7 +388,9 @@ if args.impute_data_file or args.save_imputed or args.quality:
         datarow = datarow.float().to(args.device)
 
         if args.quality:
-            sim_mask = sim_missing[bi*args.batch_size:(bi+1)*args.batch_size]
+            # sim_mask = sim_missing[bi*args.batch_size:(bi+1)*args.batch_size]
+            # PT - updated to use the simulated nans from the test data
+            sim_mask = masked_inds
             datarow[sim_mask] = 0
 
         with torch.no_grad():
