@@ -128,6 +128,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from ac import AutoComplete
 from ac import AutoCompleteWithMissingMask
+from ac import TransformerNoPosAutoCompleteWithoutMissingMask
+from ac import TransformerNoPosAutoCompleteWithMissingMask
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -179,17 +181,25 @@ dataloaders = {
             for split, mat in normd_dsets.items() }
             
 #%%
+# TransformerNoPosAutoCompleteWithMissingMask
 feature_dim = dsets['train'].shape[1]
-core = AutoComplete(
-        indim=feature_dim,
-        width=1/args.encoding_ratio,
-        n_depth=args.depth,
-    )
+# core = AutoComplete(
+#         indim=feature_dim,
+#         width=1/args.encoding_ratio,
+#         n_depth=args.depth,
+#     )
+
 # core = AutoCompleteWithMissingMask(
 #         indim=feature_dim,
 #         width=1/args.encoding_ratio,
 #         n_depth=args.depth,
 #     )
+# core = TransformerNoPosAutoCompleteWithoutMissingMask(
+#         indim=feature_dim,
+#     )
+core = TransformerNoPosAutoCompleteWithMissingMask(
+        indim=feature_dim,
+    )
 model = core.to(args.device)
 
 #%%

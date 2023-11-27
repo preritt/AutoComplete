@@ -203,3 +203,110 @@ class AutoCompleteVAE(nn.Module):
         mean, logvar = self.encode(x)
         z = self.reparameterize(mean, logvar)
         return self.decode(z), mean, logvar
+# %%
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from torch.nn import TransformerEncoder, TransformerEncoderLayer
+# %%
+class TransformerNoPosAutoCompleteWithoutMissingMask(nn.Module):
+    def __init__(self,
+                 indim=80,  # input data dimension
+                 n_layers=4,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
+                 d_model=64,  # dimension of the transformer encoder input and output
+                 dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False):
+        super().__init__()
+
+        encoder_layers = TransformerEncoderLayer(indim, n_head, dim_feedforward, dropout)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, n_layers)
+
+        self.fc = nn.Linear(indim, indim)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+        x = self.transformer_encoder(x)
+        x = self.fc(x)
+        return x
+# %%
+# %%
+class TransformerNoPosAutoCompleteWithMissingMask(nn.Module):
+    def __init__(self,
+                 indim=80,  # input data dimension
+                 n_layers=4,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
+                 d_model=64,  # dimension of the transformer encoder input and output
+                 dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False):
+        super().__init__()
+
+        encoder_layers = TransformerEncoderLayer(indim*2, n_head, dim_feedforward, dropout)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, n_layers)
+
+        self.fc = nn.Linear(indim*2, indim)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+        # Assuming x is a tensor on CUDA
+        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        concatenated_data = torch.cat((x, y), dim=1)
+        x = self.transformer_encoder(concatenated_data)
+        x = self.fc(x)
+        return x
+# %%
+class TransformerAutoCompleteWithMissingMask(nn.Module):
+    def __init__(self,
+                 indim=80,  # input data dimension
+                 n_layers=4,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
+                 d_model=64,  # dimension of the transformer encoder input and output
+                 dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False):
+        super().__init__()
+
+        self.embedding = nn.Linear(indim, d_model)
+        self.pos_encoder = PositionalEncoding(d_model, dropout)
+
+        encoder_layers = TransformerEncoderLayer(d_model, n_head, dim_feedforward, dropout)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, n_layers)
+
+        self.fc = nn.Linear(d_model, indim)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+        x = self.embedding(x)
+        x = self.pos_encoder(x)
+        x = self.transformer_encoder(x)
+        x = self.fc(x)
+        return x
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, d_model, dropout=0.1, max_len=5000):
+        super(PositionalEncoding, self).__init__()
+        self.dropout = nn.Dropout(p=dropout)
+
+        pe = torch.zeros(max_len, d_model)
+        position = torch.arange(0, max_len, dtype=torch.float).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0).transpose(0, 1)
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        x = x + self.pe[:x.size(0), :]
+        return self.dropout(x)
