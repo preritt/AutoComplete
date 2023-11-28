@@ -6,10 +6,10 @@ import sys
 sys.path.append('AutoComplete/')
 #%%
 class args:
-	data_file = 'datasets/phenotypes/data.csv'
+	data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
 	simulated_data_file = 'datasets/phenotypes/data_test.csv'
-	imputed_data_file = 'datasets/phenotypes/imputed_data_test.csv'
-	mask_data_file = 'datasets/phenotypes/mask_test.csv'
+	imputed_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
+	mask_data_file = '/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
 	num_bootstraps = 100
 #%%
 parser = argparse.ArgumentParser(description='AutoComplete')
@@ -28,10 +28,10 @@ import numpy as np
 # %%
 # load the predicted file which is a csv file
 # filename = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
-filename='/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
+# filename='/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
 
 # load the csv file
-dataset_predicted = pd.read_csv(filename)
+dataset_predicted = pd.read_csv(args.imputed_data_file)
 # set the index name to be the first column
 dataset_predicted.index.name = dataset_predicted.columns[0]
 # %%
@@ -39,9 +39,9 @@ dataset_predicted.index.name = dataset_predicted.columns[0]
 assert dataset_predicted.isnull().values.any() == False
 # %%
 # load the original test file
-filename_test = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
+# filename_test = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
 # load the csv file
-dataset_test = pd.read_csv(filename_test)
+dataset_test = pd.read_csv(args.data_file)
 # set the index name to be the first column
 dataset_test.index.name = dataset_test.columns[0]
 
@@ -51,12 +51,12 @@ obs = 0.99
 # load the file with masks which is a csv file
 phase = 'test'
 # mask_filename = '/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
-mask_filename ='/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
+# mask_filename ='/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
 # mask_filename ='/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_50p.csv'
 # mask_filename = '/u/project/sriram/ulzee/imp/data/mdd/masks/mask_{phase}_OBS%03d_{mask_tag}.npy' % (100*obs)
 
 # load the csv file
-dataset_mask = pd.read_csv(mask_filename)
+dataset_mask = pd.read_csv(args.mask_data_file)
 # set the index name to be the first column
 dataset_mask.index.name = dataset_mask.columns[0]
 # %%
@@ -105,10 +105,12 @@ assert simulated_data.index.tolist() == imputed_data.index.tolist()
 assert imputed_data.isna().sum().sum() == 0
 assert len(imputed_data.index.intersection(original_data.index)) == len(imputed_data)
 #%%
+mse=lambda a, b: np.mean((a-b)**2)
 ests = []
 stds = []
 nsize = len(imputed_data)
 corr = {}
+mse_track = {}
 for pheno in imputed_data.columns:
 	print(pheno)
 	similated_mask_locations = simulated_data[pheno]
@@ -123,13 +125,16 @@ for pheno in imputed_data.columns:
 
 		r2 = np.corrcoef(
 			predictions_at_missing_locations.values,
-			true_values_at_missing_locations)[0, 1]**2
+			true_values_at_missing_locations.values)[0, 1]**2
 		print(r2)
+		mean_sq_err = mse(predictions_at_missing_locations.values, true_values_at_missing_locations.values)
 		# corr.append(r2)
 		corr[pheno] = r2
+		mse_track[pheno] = mean_sq_err
 	else:
 		print(f'{pheno} ({missing_frac*100:.1f}%)')
 		corr[pheno] = 'NA'
+		mse_track[pheno] = 'NA'
 	# missing_frac = simulated_data[pheno].isna().sum() / nsize
 
 	# est = np.nan
