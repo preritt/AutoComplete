@@ -20,7 +20,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_50p.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
@@ -29,7 +29,7 @@ class args:
     simulate_missing = 0.01
     bootstrap = False
     seed = -1
-    quality = True
+    quality = False
     multiple = -1
     save_model_path = None
     save_imputed = True
@@ -135,7 +135,10 @@ tab = pd.read_csv(args.data_file).set_index(args.id_name)
 test_data = pd.read_csv(args.impute_data_file).set_index(args.id_name)
 print(f'Dataset size:', tab.shape[0])
 print(f'Dataset size for test:', test_data.shape[0])
-test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv').set_index(args.id_name)
+# test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv').set_index(args.id_name)
+test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS050_0.csv').set_index(args.id_name)
+
+
 #%%
 if args.bootstrap:
     print('Bootstrap mode')
@@ -368,20 +371,20 @@ if args.impute_data_file or args.save_imputed or args.quality:
 
     preds_ls = []
 
-    if args.quality:
-        sim_missing = imptab.values.copy()
-        print('Starting # observed values:', (~np.isnan(sim_missing)).sum())
-        target_missing_sim = (~np.isnan(sim_missing)).sum() * (1 - args.simulate_missing)
-        while target_missing_sim < (~np.isnan(sim_missing)).sum():
-            samplesA = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
-            samplesB = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
-            # print(np.isnan(sim_missing[samplesB]).sum())
-            patch = sim_missing[samplesA]
-            patch[np.isnan(sim_missing[samplesB])] = np.nan
-            sim_missing[samplesA] = patch
-            print(f'\r Simulating missing values: {target_missing_sim} < { (~np.isnan(sim_missing)).sum()}', end='')
-        sim_missing = np.isnan(sim_missing)
-        print()
+    # if args.quality:
+    #     sim_missing = imptab.values.copy()
+    #     print('Starting # observed values:', (~np.isnan(sim_missing)).sum())
+    #     target_missing_sim = (~np.isnan(sim_missing)).sum() * (1 - args.simulate_missing)
+    #     while target_missing_sim < (~np.isnan(sim_missing)).sum():
+    #         samplesA = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
+    #         samplesB = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
+    #         # print(np.isnan(sim_missing[samplesB]).sum())
+    #         patch = sim_missing[samplesA]
+    #         patch[np.isnan(sim_missing[samplesB])] = np.nan
+    #         sim_missing[samplesA] = patch
+    #         print(f'\r Simulating missing values: {target_missing_sim} < { (~np.isnan(sim_missing)).sum()}', end='')
+    #     sim_missing = np.isnan(sim_missing)
+    #     print()
 
     for bi, batch in enumerate(dset):
         datarow, _, masked_inds = batch
@@ -406,59 +409,59 @@ if args.impute_data_file or args.save_imputed or args.quality:
     pmat += train_stats['mean']
     print()
 
-    if args.quality:
-        print('=================================================')
-        print('Imputation Quality:')
-        morder = np.argsort(imptab.isna().sum() / len(imptab))
-        qdf = dict(feature=[], info=[], r2=[], quality=[])
-        # for pi, feature in enumerate(imptab.columns):
-        for pi in morder:
-            feature = imptab.columns[pi]
-            mfrac = imptab[feature].isna().sum() / len(imptab)
-            dxstr = '(no missing values)'
-            var_info = None
-            simr2 = 0
-            flag = 'NOM'
-            if mfrac > 0:
+    # if args.quality:
+    #     print('=================================================')
+    #     print('Imputation Quality:')
+    #     morder = np.argsort(imptab.isna().sum() / len(imptab))
+    #     qdf = dict(feature=[], info=[], r2=[], quality=[])
+    #     # for pi, feature in enumerate(imptab.columns):
+    #     for pi in morder:
+    #         feature = imptab.columns[pi]
+    #         mfrac = imptab[feature].isna().sum() / len(imptab)
+    #         dxstr = '(no missing values)'
+    #         var_info = None
+    #         simr2 = 0
+    #         flag = 'NOM'
+    #         if mfrac > 0:
 
-                var_imp = pmat[:, pi][imptab[feature].isna()].var()
-                var_obs = imptab[feature][~imptab[feature].isna()].values.var()
-                var_info = var_imp / var_obs
+    #             var_imp = pmat[:, pi][imptab[feature].isna()].var()
+    #             var_obs = imptab[feature][~imptab[feature].isna()].values.var()
+    #             var_info = var_imp / var_obs
 
-                vsim = sim_missing[:, pi] & ~imptab[feature].isna()
-                nsim = vsim.sum()
-                simr2 = np.corrcoef(pmat[:, pi][vsim], imptab[feature].values[vsim])[0, 1]**2
+    #             vsim = sim_missing[:, pi] & ~imptab[feature].isna()
+    #             nsim = vsim.sum()
+    #             simr2 = np.corrcoef(pmat[:, pi][vsim], imptab[feature].values[vsim])[0, 1]**2
 
-                Nobs = np.sum(~imptab[feature].isna())
-                if not np.isnan(simr2):
-                    Neff = int(simr2 * np.sum(imptab[feature].isna()) + Nobs)
-                else:
-                    Neff = Nobs
-                eff_fold = Neff / Nobs
+    #             Nobs = np.sum(~imptab[feature].isna())
+    #             if not np.isnan(simr2):
+    #                 Neff = int(simr2 * np.sum(imptab[feature].isna()) + Nobs)
+    #             else:
+    #                 Neff = Nobs
+    #             eff_fold = Neff / Nobs
 
 
 
-                if mfrac < 0.1:
-                    flag = 'LOM'
-                else:
-                    if var_info >=0.2 and simr2 < 0.2:
-                        flag = 'LOR'
-                    elif var_info < 0.2 and simr2 >= 0.2:
-                        flag = 'LOV'
-                    elif var_info >= 0.2 and simr2 >= 0.2:
-                        flag = 'QOK'
-                    else:
-                        flag = 'LOQ'
+    #             if mfrac < 0.1:
+    #                 flag = 'LOM'
+    #             else:
+    #                 if var_info >=0.2 and simr2 < 0.2:
+    #                     flag = 'LOR'
+    #                 elif var_info < 0.2 and simr2 >= 0.2:
+    #                     flag = 'LOV'
+    #                 elif var_info >= 0.2 and simr2 >= 0.2:
+    #                     flag = 'QOK'
+    #                 else:
+    #                     flag = 'LOQ'
 
-                dxstr = f'var_info={var_info:.2f} r2={simr2:.2f} effective=x{eff_fold:.1f}'
-            qdf['feature'] += [feature]
-            qdf['info'] += [var_info]
-            qdf['r2'] += [simr2]
-            qdf['quality'] += [flag]
-            print(f'{flag} missing={mfrac*100:.1f}% {dxstr}', feature)
-        print('=================================================')
-        qdf = pd.DataFrame(qdf)
-        qdf.to_csv(save_model_path.replace('.pth', '_quality.csv'), index=False)
+    #             dxstr = f'var_info={var_info:.2f} r2={simr2:.2f} effective=x{eff_fold:.1f}'
+    #         qdf['feature'] += [feature]
+    #         qdf['info'] += [var_info]
+    #         qdf['r2'] += [simr2]
+    #         qdf['quality'] += [flag]
+    #         print(f'{flag} missing={mfrac*100:.1f}% {dxstr}', feature)
+    #     print('=================================================')
+    #     qdf = pd.DataFrame(qdf)
+    #     qdf.to_csv(save_model_path.replace('.pth', '_quality.csv'), index=False)
 
     if args.impute_data_file or args.save_imputed:
         template = imptab.copy()

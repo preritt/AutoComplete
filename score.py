@@ -8,10 +8,12 @@ import matplotlib.pyplot as plt
 from collections import OrderedDict
 import utils
 import numpy as np
-droot = '/home/ulzee/imp/data'
+# point to project folder
+# droot = '/home/ulzee/imp/data'
+droot = '/u/project/sriram/ulzee/imp/data'
 ext = 'csv'
 #%%
-dname = 'andy'
+dname = 'mdd'
 phase = 'test'
 obs = 0.99
 #%%
@@ -19,23 +21,25 @@ obs = 0.99
 # method = f'/home/ulzee/imp/data/andyv3pcs/OBS0992_imputed_{phase}_deepcoder_RANDMASK03_LIVEMASK_WIDTH10_DEPTH1_MULT0_BATCH2048_RELU_SGDLR05M09_TESTMASK_VAL.csv'
 # method = f'/home/ulzee/imp/data/andyv3pcs/OBS0992_imputed_{phase}_deepcoder_RANDMASK03_LIVEMASK_WIDTH10_DEPTH1_MULT0_BATCH2048_RELU_SGDLR05M09_TESTMASK_VAL.csv'
 # method = '/home/ulzee/imp/data/andy/OBS099_imputed_test_softimpute_.csv'
-method = '/home/ulzee/imp/data/andy/OBS099_imputed_test_deepcoder_RANDMASK03_LIVEMASK_WIDTH10_DEPTH1_MULT0_BATCH2048_RELU_SGDLR01M09_VAL.csv'
-bootstrap = True
+# method = '/home/ulzee/imp/data/andy/OBS099_imputed_test_deepcoder_RANDMASK03_LIVEMASK_WIDTH10_DEPTH1_MULT0_BATCH2048_RELU_SGDLR01M09_VAL.csv'
+# method = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test.csv'
+method ='/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
+bootstrap = False
 ext = 'csv'
 pop = None
 no_header = False
 # %%
-print(sys.argv[1:])
-dname = sys.argv[1]
-phase = sys.argv[2]
-obs = float(sys.argv[3])
-method = sys.argv[4]
-bootstrap = len(sys.argv) >= 6 and sys.argv[5] == 'boot'
-if len(sys.argv) >= 7:
-	ext = sys.argv[6]
-if len(sys.argv) >= 8:
-	no_header = sys.argv[7] == 'no_header'
-pop = None
+# print(sys.argv[1:])
+# dname = sys.argv[1]
+# phase = sys.argv[2]
+# obs = float(sys.argv[3])
+# method = sys.argv[4]
+# bootstrap = len(sys.argv) >= 6 and sys.argv[5] == 'boot'
+# if len(sys.argv) >= 7:
+# 	ext = sys.argv[6]
+# if len(sys.argv) >= 8:
+# 	no_header = sys.argv[7] == 'no_header'
+# pop = None
 # if len(sys.argv) == 8:
 # 	pop = int(sys.argv[7])
 # 	print('Limit pop', pop)
