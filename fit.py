@@ -20,7 +20,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/autocomplete/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -183,11 +183,11 @@ dataloaders = {
 #%%
 # TransformerNoPosAutoCompleteWithMissingMask
 feature_dim = dsets['train'].shape[1]
-# core = AutoComplete(
-#         indim=feature_dim,
-#         width=1/args.encoding_ratio,
-#         n_depth=args.depth,
-#     )
+core = AutoComplete(
+        indim=feature_dim,
+        width=1/args.encoding_ratio,
+        n_depth=args.depth,
+    )
 
 # core = AutoCompleteWithMissingMask(
 #         indim=feature_dim,
@@ -197,9 +197,9 @@ feature_dim = dsets['train'].shape[1]
 # core = TransformerNoPosAutoCompleteWithoutMissingMask(
 #         indim=feature_dim,
 #     )
-core = TransformerNoPosAutoCompleteWithMissingMask(
-        indim=feature_dim,
-    )
+# core = TransformerNoPosAutoCompleteWithMissingMask(
+#         indim=feature_dim,
+#     )
 model = core.to(args.device)
 
 #%%

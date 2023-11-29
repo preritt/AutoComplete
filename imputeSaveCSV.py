@@ -10,7 +10,7 @@ import sys
 #%%
 class args:
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -19,11 +19,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
