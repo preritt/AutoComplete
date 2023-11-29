@@ -1,7 +1,7 @@
 #%% 
 # %load_ext autoreload
 # %autoreload 2
-#%%
+#%% AutoComplete/datasets/allFeatureDataTransformer   AutoComplete/datasets/allFeatureDataTransformerWithMask
 import pandas as pd
 from time import time
 import json
@@ -9,8 +9,8 @@ import argparse
 import sys
 #%%
 class args:
-    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.csv'
+    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -19,11 +19,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
@@ -128,6 +128,8 @@ from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from ac import AutoComplete
 from ac import AutoCompleteWithMissingMask
+from ac import TransformerNoPosAutoCompleteWithoutMissingMask
+from ac import TransformerNoPosAutoCompleteWithMissingMask
 from dataset import CopymaskDataset
 from datasetTest import TestDataset as Test
 #%%
@@ -218,18 +220,30 @@ for split, mat in normd_dsets.items():
 
 #%%
 feature_dim = dsets['train'].shape[1]
-core = AutoComplete(
-        indim=feature_dim,
-        width=1/args.encoding_ratio,
-        n_depth=args.depth,
-    )
+# core = AutoComplete(
+#         indim=feature_dim,
+#         width=1/args.encoding_ratio,
+#         n_depth=args.depth,
+#     )
 # core = AutoCompleteWithMissingMask(
 #         indim=feature_dim,
 #         width=1/args.encoding_ratio,
 #         n_depth=args.depth,
 #     )
-model = core.to(args.device)
+core = AutoCompleteWithMissingMask(
+        indim=feature_dim,
+        width=1/args.encoding_ratio,
+        n_depth=args.depth,
+    )
 
+# core = TransformerNoPosAutoCompleteWithoutMissingMask(
+#         indim=feature_dim,
+#     )
+# core = TransformerNoPosAutoCompleteWithMissingMask(
+#         indim=feature_dim,
+#     )
+model = core.to(args.device)
+print('Model name is :', model.__class__.__name__)
 #%%
 if not args.impute_using_saved:
     cont_crit = nn.MSELoss()
@@ -385,7 +399,7 @@ if args.impute_data_file or args.save_imputed or args.quality:
     #         print(f'\r Simulating missing values: {target_missing_sim} < { (~np.isnan(sim_missing)).sum()}', end='')
     #     sim_missing = np.isnan(sim_missing)
     #     print()
-
+    print('Model name is :', model.__class__.__name__)
     for bi, batch in enumerate(dset):
         datarow, _, masked_inds = batch
         datarow = datarow.float().to(args.device)
@@ -473,7 +487,7 @@ if args.impute_data_file or args.save_imputed or args.quality:
         template
 
         template.to_csv(save_table_name)
-
+print('Model name is :', model.__class__.__name__)
 print('done')
 
 # %%

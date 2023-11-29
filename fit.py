@@ -7,10 +7,10 @@ from time import time
 import json
 import argparse
 import sys
-#%%
+#%%AutoComplete/datasets/allFeatureDataTransformerWithMask  AutoComplete/datasets/allFeatureData AutoComplete/datasets/allFeatureData
 class args:
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -20,7 +20,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/autocomplete/data_fit_imputed.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -183,17 +183,17 @@ dataloaders = {
 #%%
 # TransformerNoPosAutoCompleteWithMissingMask
 feature_dim = dsets['train'].shape[1]
-core = AutoComplete(
-        indim=feature_dim,
-        width=1/args.encoding_ratio,
-        n_depth=args.depth,
-    )
-
-# core = AutoCompleteWithMissingMask(
+# core = AutoComplete(
 #         indim=feature_dim,
 #         width=1/args.encoding_ratio,
 #         n_depth=args.depth,
 #     )
+
+core = AutoCompleteWithMissingMask(
+        indim=feature_dim,
+        width=1/args.encoding_ratio,
+        n_depth=args.depth,
+    )
 # core = TransformerNoPosAutoCompleteWithoutMissingMask(
 #         indim=feature_dim,
 #     )
@@ -202,6 +202,7 @@ core = AutoComplete(
 #     )
 model = core.to(args.device)
 
+print('Model:', model.__class__.__name__)
 #%%
 if not args.impute_using_saved:
     cont_crit = nn.MSELoss()

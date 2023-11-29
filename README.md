@@ -175,3 +175,7 @@ and saves the quality information to the csv: `datasets/phenotypes/data_quality.
 ## Citing AutoComplete
 
 TBA
+
+## Track Prerit
+- allFeatureData : Autoencoder with missing mask input too
+- allFetureDataAEOnly : Autoencoder as in autocomplete
