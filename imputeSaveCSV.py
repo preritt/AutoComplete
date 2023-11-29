@@ -20,7 +20,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_50p.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
@@ -136,7 +136,7 @@ test_data = pd.read_csv(args.impute_data_file).set_index(args.id_name)
 print(f'Dataset size:', tab.shape[0])
 print(f'Dataset size for test:', test_data.shape[0])
 # test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv').set_index(args.id_name)
-test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS050_0.csv').set_index(args.id_name)
+test_data_mask_file = pd.read_csv('/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv').set_index(args.id_name)
 
 
 #%%
@@ -466,7 +466,9 @@ if args.impute_data_file or args.save_imputed or args.quality:
     if args.impute_data_file or args.save_imputed:
         template = imptab.copy()
         tmat = template.values
-        tmat[np.isnan(tmat)] = pmat[np.isnan(tmat)]
+        tmat[test_data_mask_file.values==1] = pmat[test_data_mask_file.values==1]
+        # tmat[np.isnan(tmat)] = pmat[np.isnan(tmat)]
+        
         template[:] = tmat
         template
 

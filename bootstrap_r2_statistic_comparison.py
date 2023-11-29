@@ -8,7 +8,7 @@ sys.path.append('AutoComplete/')
 class args:
 	data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
 	simulated_data_file = 'datasets/phenotypes/data_test.csv'
-	imputed_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData.csv'
+	imputed_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
 	mask_data_file = '/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
 	num_bootstraps = 100
 #%%
@@ -105,12 +105,23 @@ assert simulated_data.index.tolist() == imputed_data.index.tolist()
 assert imputed_data.isna().sum().sum() == 0
 assert len(imputed_data.index.intersection(original_data.index)) == len(imputed_data)
 #%%
+metrics = OrderedDict(
+	mse=lambda a, b: np.mean((a-b)**2),
+	r2=lambda a, b: np.corrcoef(a, b)[0, 1]**2,
+	pr=utils.aucpr,
+	roc=utils.aucroc,
+)
+scores = OrderedDict(pheno=[], n=[])
+for fname, fn in metrics.items():
+	scores[fname] = []
+#%%
 mse=lambda a, b: np.mean((a-b)**2)
 ests = []
 stds = []
 nsize = len(imputed_data)
 corr = {}
 mse_track = {}
+#%%
 for pheno in imputed_data.columns:
 	print(pheno)
 	similated_mask_locations = simulated_data[pheno]
