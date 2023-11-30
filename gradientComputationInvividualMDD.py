@@ -159,6 +159,9 @@ contin_features = tab.columns[~(ncats == 2)]
 feature_ord = list(contin_features) + list(binary_features)
 print(f'Features loaded: contin={len(contin_features)}, binary={len(binary_features)}')
 CONT_BINARY_SPLIT = len(contin_features)
+#%%
+index_mdd = feature_ord.index('MDDRecur')
+print(index_mdd)
 # %%
 # keep a validation set
 val_ind = int(tab.shape[0]*args.val_split)
@@ -245,7 +248,57 @@ core = AutoCompleteWithMissingMask(
 model = core.to(args.device)
 print('Model name is :', model.__class__.__name__)
 #%%
+# Define a function to compute the gradient of the ith output with respect to the inputs
 
+# def compute_gradient(model, datarow, output_number=10):
+#     # Set the model to evaluation mode
+#     model.eval()
+
+#     # Convert the datarow to a PyTorch tensor
+#     # datarow_tensor = torch.tensor(datarow, dtype=torch.float32)
+#     datarow_tensor = datarow.clone().detach()
+
+#     # Enable gradient computation for the inputs
+#     datarow_tensor.requires_grad = True
+
+#     # Perform the forward pass
+#     output = model(datarow_tensor)
+
+#     # Select the specified output
+#     output_selected = output[:, output_number]
+
+#     # Compute the gradients of each element in the output_selected tensor with respect to the inputs
+#     gradients = []
+#     for i in range(len(output_selected)):
+#         gradient = torch.autograd.grad(output_selected[i], datarow_tensor[i], retain_graph=True)[0]
+#         gradients.append(gradient)
+
+#     return gradients
+
+#%%
+def compute_gradient(model, datarow, output_number):
+    # Set model to evaluation mode
+    model.eval()
+
+    # Convert inputs to PyTorch tensor
+    # inputs_tensor = torch.tensor(datarow, requires_grad=True)
+    # inputs_tensor = torch.tensor(datarow).clone().detach().requires_grad_(True)
+    inputs_tensor = datarow.clone().detach().requires_grad_(True)
+
+
+    # Forward pass to get the output
+    outputs = model(inputs_tensor)
+
+    # Extract the specified output
+    selected_output = outputs[:, output_number]
+
+    # Backward pass to compute gradients
+    selected_output.backward(torch.ones_like(selected_output))
+
+    # Get the gradients of the inputs
+    gradients = inputs_tensor.grad
+
+    return gradients.detach()
 #%%
 if args.impute_using_saved:
     print(f'Loading specified weights: {args.impute_using_saved}')
@@ -264,17 +317,7 @@ if args.impute_data_file or args.save_imputed or args.quality:
     print(f'(impute) Dataset size:', imptab.shape[0])
 
     mat_imptab = (imptab.values - train_stats['mean'])/train_stats['std']
-    # dset = torch.utils.data.DataLoader(
-    #     CopymaskDataset(mat_imptab, 'final'),
-    #     batch_size=args.batch_size,
-    #     shuffle=False, num_workers=0)
 
-    #     dataloaders[split] = torch.utils.data.DataLoader(
-    #         Test(normd_dsets[split], split, test_data_mask_file.values, copymask_amount=args.copymask_amount),
-    #         batch_size=args.batch_size,
-    #         shuffle=False,
-    #         num_workers=0
-    # )
 
     dset = torch.utils.data.DataLoader(
         Test(mat_imptab, 'final', test_data_mask_file.values),
@@ -282,21 +325,8 @@ if args.impute_data_file or args.save_imputed or args.quality:
         shuffle=False, num_workers=0)    
 
     preds_ls = []
-
-    # if args.quality:
-    #     sim_missing = imptab.values.copy()
-    #     print('Starting # observed values:', (~np.isnan(sim_missing)).sum())
-    #     target_missing_sim = (~np.isnan(sim_missing)).sum() * (1 - args.simulate_missing)
-    #     while target_missing_sim < (~np.isnan(sim_missing)).sum():
-    #         samplesA = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
-    #         samplesB = np.random.choice(range(len(sim_missing)), size=len(imptab)//100)
-    #         # print(np.isnan(sim_missing[samplesB]).sum())
-    #         patch = sim_missing[samplesA]
-    #         patch[np.isnan(sim_missing[samplesB])] = np.nan
-    #         sim_missing[samplesA] = patch
-    #         print(f'\r Simulating missing values: {target_missing_sim} < { (~np.isnan(sim_missing)).sum()}', end='')
-    #     sim_missing = np.isnan(sim_missing)
-    #     print()
+    all_gradients = []
+    all_gradients_mdd_unknown = []
     print('Model name is :', model.__class__.__name__)
     for bi, batch in enumerate(dset):
         datarow, _, masked_inds = batch
@@ -310,6 +340,15 @@ if args.impute_data_file or args.save_imputed or args.quality:
 
         with torch.no_grad():
             yhat = model(datarow)
+        # compute the gradient of the ith output with respect to the inputs
+        gradients = compute_gradient(model, datarow, output_number=index_mdd)
+        completed_frame = yhat.clone().detach()
+        # make the index_mdd column to 0
+        completed_frame[:, index_mdd] = 0
+        gradients_mdd_all_known = compute_gradient(model, completed_frame, output_number=index_mdd)
+
+        all_gradients+=[gradients.cpu().numpy()] 
+        all_gradients_mdd_unknown+=[gradients_mdd_all_known.cpu().numpy()]   
         sind = CONT_BINARY_SPLIT
         yhat = torch.cat([yhat[:, :sind], torch.sigmoid(yhat[:, sind:])], dim=1)
 
@@ -319,6 +358,8 @@ if args.impute_data_file or args.save_imputed or args.quality:
     pmat = np.concatenate(preds_ls)
     pmat *= train_stats['std']
     pmat += train_stats['mean']
+    all_gradients_np = np.concatenate(all_gradients)
+    all_gradients_mdd_unknown_np = np.concatenate(all_gradients_mdd_unknown)
     print()
 
 
