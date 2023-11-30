@@ -177,5 +177,14 @@ and saves the quality information to the csv: `datasets/phenotypes/data_quality.
 TBA
 
 ## Track Prerit
-- allFeatureData : Autoencoder with missing mask input too
-- allFetureDataAEOnly : Autoencoder as in autocomplete
+- Folder locations for comparison
+    - allFeatureData : Autoencoder with missing mask input too
+    - allFetureDataAEOnly : Autoencoder as in autocomplete
+- File details
+    - `bootstrap_r2_statistic_comparison.py`: Produces the json file for analysis
+    - `dataConversionToCSV.py`: Converts tsv file to csv
+    - `imputeSaveCSV.py`: Generates the imputed data
+    - `fit.py` : Trains the model
+    - `ac.py`: Defines several models
+    - `gradientComputationInvividualMDD.py` Compute the gradient of MDD w.r.t. inputs
+
