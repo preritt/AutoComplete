@@ -9,8 +9,9 @@ import argparse
 import sys
 #%%AutoComplete/datasets/allFeatureDataTransformerWithMask  AutoComplete/datasets/allFeatureData AutoComplete/datasets/allFeatureData
 class args:
-    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
+    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptra in.csv'
+    # AutoComplete/datasets/allFeatureDataTransformerV2 AutoComplete/datasets/allFeatureDataTransformerWithMaskV2
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerWithMaskV2/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -20,7 +21,7 @@ class args:
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerWithMaskV2/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -130,6 +131,8 @@ from ac import AutoComplete
 from ac import AutoCompleteWithMissingMask
 from ac import TransformerNoPosAutoCompleteWithoutMissingMask
 from ac import TransformerNoPosAutoCompleteWithMissingMask
+from ac import TransformerNoPosAutoCompleteWithoutMissingMaskV2
+from ac import TransformerNoPosAutoCompleteWithoutMissingWithMaskV2
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -189,17 +192,24 @@ feature_dim = dsets['train'].shape[1]
 #         n_depth=args.depth,
 #     )
 
-core = AutoCompleteWithMissingMask(
-        indim=feature_dim,
-        width=1/args.encoding_ratio,
-        n_depth=args.depth,
-    )
+# core = AutoCompleteWithMissingMask(
+#         indim=feature_dim,
+#         width=1/args.encoding_ratio,
+#         n_depth=args.depth,
+#     )
 # core = TransformerNoPosAutoCompleteWithoutMissingMask(
 #         indim=feature_dim,
 #     )
 # core = TransformerNoPosAutoCompleteWithMissingMask(
 #         indim=feature_dim,
 #     )
+# core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
+#         indim=feature_dim,
+#     )
+
+core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
+        indim=feature_dim,
+    )
 model = core.to(args.device)
 
 print('Model:', model.__class__.__name__)
