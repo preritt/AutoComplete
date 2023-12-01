@@ -230,6 +230,7 @@ class TransformerNoPosAutoCompleteWithoutMissingMask(nn.Module):
             print('Out D', indim)
 
     def forward(self, x):
+        
         x = self.transformer_encoder(x)
         x = self.fc(x)
         return x
@@ -315,7 +316,7 @@ class PositionalEncoding(nn.Module):
 class TransformerNoPosAutoCompleteWithoutMissingMaskV2(nn.Module):
     def __init__(self,
                  indim=80,  # input data dimension
-                 n_layers=4,  # number of layers in the transformer encoder
+                 n_layers=2,  # number of layers in the transformer encoder
                  n_head=1,  # number of attention heads in the transformer encoder
                  d_model=64,  # dimension of the transformer encoder input and output
                  dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
@@ -348,23 +349,26 @@ class TransformerNoPosAutoCompleteWithoutMissingMaskV2(nn.Module):
 class TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(nn.Module):
     def __init__(self,
                  indim=80,  # input data dimension
-                 n_layers=4,  # number of layers in the transformer encoder
-                 n_head=1,  # number of attention heads in the transformer encoder
+                 n_layers=2,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
                  d_model=64,  # dimension of the transformer encoder input and output
                  dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
                  dropout=0.1,  # dropout rate in the transformer encoder
+                 dim_ff_penultimate=32,
                  verbose=False):
         super().__init__()
 
-        encoder_layers = TransformerEncoderLayer(1, n_head, dim_feedforward, dropout, batch_first=True)
+        encoder_layers = TransformerEncoderLayer(2, n_head, dim_feedforward, dropout, batch_first=True)
         self.transformer_encoder = TransformerEncoder(encoder_layers, n_layers)
 
         # self.fc = nn.Linear(indim, indim)
         # self.fc = nn.Linear(1, dim_feedforward)
         # Add a feedforward layer
         self.feedforward = nn.Sequential(
-            nn.Linear(1, dim_feedforward),
-            nn.Linear(dim_feedforward, 1)  # Adjust the output size to 1
+            nn.Linear(2, dim_ff_penultimate),
+            nn.ReLU(),
+            nn.Linear(dim_ff_penultimate, 2),  # Adjust the output size to 1
+            nn.ReLU()
         )
         self.final_fc = nn.Linear(indim*2, indim)
         if verbose:
@@ -373,11 +377,59 @@ class TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(nn.Module):
 
     def forward(self, x):
         y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
-        concatenated_data = torch.cat((x, y), dim=1)
-        x = concatenated_data.unsqueeze(-1)
+        # concatenated_data = torch.cat((x, y), dim=0)
+        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        # x = concatenated_data.unsqueeze(-1)
         # x = x.permute(1, 0, 2)
-        x = self.transformer_encoder(x)
-        x = self.feedforward(x)
-        x = x.squeeze(-1) 
+        x = self.transformer_encoder(tensor)
+        
+        # x = self.feedforward(x)
+        # reshape x to be of batch size x 
+        x = x.reshape(x.shape[0], -1)
+
         x = self.final_fc(x)
         return x
+    
+# %%
+class TransformerNoPosAutoCompleteWithoutMissingMaskAttention(nn.Module):
+    def __init__(self,
+                 indim=80,  # input data dimension
+                 n_layers=4,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
+                 d_model=64,  # dimension of the transformer encoder input and output
+                 dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False):
+        super().__init__()
+
+        # Create the transformer encoder with multi-head attention
+        self.transformer_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=indim,
+                nhead=n_head,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout
+            ),
+            num_layers=n_layers
+        )
+
+        # Linear layer
+        self.fc = nn.Linear(indim, indim)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+        # Forward pass through the transformer encoder
+        attention_scores = []  # List to store attention scores for each layer
+
+        for layer in self.transformer_encoder.layers:
+            # Get attention scores from each layer
+            x, attention_score = layer.self_attn(x, x, x)
+            attention_scores.append(attention_score)
+
+        # Apply linear layer
+        x = self.fc(x)
+
+        return x, attention_scores

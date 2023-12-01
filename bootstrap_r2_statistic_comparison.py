@@ -5,6 +5,8 @@ import argparse
 import sys
 sys.path.append('AutoComplete/')
 #%% AutoComplete/datasets/allFeatureData  AutoComplete/datasets/allFeatureDataAEOnly AutoComplete/datasets/allFeatureDataTransformer AutoComplete/datasets/allFeatureDataTransformerWithMask
+
+# AutoComplete/datasets/allFeatureDataTransformerWithMask
 class args:
 	data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerWithMask/ptest.csv'
 	simulated_data_file = 'datasets/phenotypes/data_test.csv'

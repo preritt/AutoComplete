@@ -1,16 +1,16 @@
 #%% 
 # %load_ext autoreload
 # %autoreload 2
-#%% AutoComplete/datasets/allFeatureDataTransformer   AutoComplete/datasets/allFeatureDataTransformerWithMask
+#%% AutoComplete/datasets/allFeatureDataTransformer   AutoComplete/datasets/allFeatureDataTransformerWithMask AutoComplete/datasets/allFeatureDataTransformerV2
 import pandas as pd
 from time import time
 import json
 import argparse
 import sys
 #%%
-class args:
-    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv'
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.csv'
+class args: 
+    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv' 
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -19,11 +19,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
@@ -130,6 +130,8 @@ from ac import AutoComplete
 from ac import AutoCompleteWithMissingMask
 from ac import TransformerNoPosAutoCompleteWithoutMissingMask
 from ac import TransformerNoPosAutoCompleteWithMissingMask
+from ac import TransformerNoPosAutoCompleteWithoutMissingMaskV2
+from ac import TransformerNoPosAutoCompleteWithoutMissingWithMaskV2
 from dataset import CopymaskDataset
 from datasetTest import TestDataset as Test
 #%%
@@ -230,12 +232,19 @@ feature_dim = dsets['train'].shape[1]
 #         width=1/args.encoding_ratio,
 #         n_depth=args.depth,
 #     )
-core = AutoCompleteWithMissingMask(
-        indim=feature_dim,
-        width=1/args.encoding_ratio,
-        n_depth=args.depth,
-    )
+# core = AutoCompleteWithMissingMask(
+#         indim=feature_dim,
+#         width=1/args.encoding_ratio,
+#         n_depth=args.depth,
+#     )
 
+# core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
+#         indim=feature_dim,
+#     )
+
+core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
+        indim=feature_dim,
+    )
 # core = TransformerNoPosAutoCompleteWithoutMissingMask(
 #         indim=feature_dim,
 #     )
