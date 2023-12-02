@@ -9,8 +9,9 @@ import argparse
 import sys
 #%%
 class args: 
-    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv' 
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.csv'
+    # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv'  AutoComplete/datasets/allFeatureData
+    # AutoComplete/datasets/allFeatureDataAEOnly
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -19,11 +20,11 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p.csv'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptrain.pth'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p_v2.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01
@@ -222,11 +223,11 @@ for split, mat in normd_dsets.items():
 
 #%%
 feature_dim = dsets['train'].shape[1]
-# core = AutoComplete(
-#         indim=feature_dim,
-#         width=1/args.encoding_ratio,
-#         n_depth=args.depth,
-#     )
+core = AutoComplete(
+        indim=feature_dim,
+        width=1/args.encoding_ratio,
+        n_depth=args.depth,
+    )
 # core = AutoCompleteWithMissingMask(
 #         indim=feature_dim,
 #         width=1/args.encoding_ratio,
@@ -242,9 +243,9 @@ feature_dim = dsets['train'].shape[1]
 #         indim=feature_dim,
 #     )
 
-core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
-        indim=feature_dim,
-    )
+# core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
+#         indim=feature_dim,
+#     )
 # core = TransformerNoPosAutoCompleteWithoutMissingMask(
 #         indim=feature_dim,
 #     )

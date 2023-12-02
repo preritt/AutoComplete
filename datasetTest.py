@@ -69,7 +69,7 @@ class TestDataset(Dataset):
         #     mask_inds[np.where(mask_inds & observed_inds)] = False
 
         # set true existing nans to zero
-        datarow[missing_inds] = 0
-        datarow[mask_inds] = 0
+        datarow[missing_inds==1] = 0
+        datarow[mask_inds==1] = 0
 
         return datarow, missing_inds, mask_inds
