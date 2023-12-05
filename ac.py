@@ -582,4 +582,115 @@ class TransformerAdaptInput(nn.Module):
         x = x.squeeze(-1)
 
         return x, attention_scores
+    
 # %%
+import math
+class PositionalEncoding(nn.Module):
+	# define positional encoding
+    """
+    This class implements the positional encoding for a transformer model.
+
+    Args:
+        d_model (int): The number of expected features in the input.
+        max_seq_len (int): The maximum sequence length.
+
+    Attributes:
+        pe (torch.Tensor): The positional encoding matrix.
+
+    """
+    def __init__(self, d_model, max_seq_len):
+        super().__init__()
+        self.d_model = d_model
+        self.max_seq_len = max_seq_len
+
+        # create the positional encoding matrix
+        pe = torch.zeros(max_seq_len, d_model)
+        position = torch.arange(0, max_seq_len, dtype=torch.float32).unsqueeze(1)
+        div_term = torch.exp(torch.arange(0, d_model, 2, dtype=torch.float32) * (-math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+
+        # register the positional encoding matrix as a buffer
+        self.register_buffer('pe', pe)
+
+    def forward(self, x):
+        """
+        Adds the positional encoding to the input tensor.
+
+        Args:
+            x (torch.Tensor): The input tensor.
+
+        Returns:
+            torch.Tensor: The input tensor with the positional encoding added.
+
+        """
+        return self.pe[:, :x.size(1)]
+
+# %%
+class TransformerAdaptInputWithPosition(nn.Module):
+    def __init__(self,
+                 indim=2,  # input data dimension
+                 n_layers=2,  # number of layers in the transformer encoder
+                 n_head=8,  # number of attention heads in the transformer encoder
+                 d_model=32,  # dimension of the transformer encoder input and output
+                 dim_feedforward=128,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False,
+                 positional_encoding=PositionalEncoding,
+                 max_seq_len=1028):
+        super().__init__()
+
+        # make a transformer compatible input
+        self.transformer_input = TransformerCompatibleInput(indim, d_model)
+        self.positional_encoding = positional_encoding(d_model, max_seq_len)
+        # Create the transformer encoder with multi-head attention
+        self.transformer_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=n_head,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout
+            ),
+            num_layers=n_layers
+        )
+
+        # Linear layer
+        self.fc = nn.Linear(d_model, 1)
+        self.d_model = d_model
+        # add a layer normalization layer
+        self.layer_norm = nn.LayerNorm(d_model)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+
+        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        # concatenated_data = torch.cat((x, y), dim=0)
+        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        # make this to be transformer compatible
+        tensor = self.transformer_input(tensor)*math.sqrt(self.d_model)
+        tensor = self.layer_norm(tensor)
+        tensor = tensor + self.positional_encoding(tensor)
+        
+
+        # x = concatenated_data.unsqueeze(-1)
+        # x = x.permute(1, 0, 2)
+        x = self.transformer_encoder(tensor)
+
+        # Forward pass through the transformer encoder
+        attention_scores = []  # List to store attention scores for each layer
+
+        for layer in self.transformer_encoder.layers:
+            # Get attention scores from each layer
+            x, attention_score = layer.self_attn(x, x, x)
+            attention_scores.append(attention_score)
+
+        # Apply linear layer
+        x = self.fc(x)
+        # remove the last dimension
+        x = x.squeeze(-1)
+
+        return x, attention_scores

@@ -135,6 +135,7 @@ from ac import TransformerNoPosAutoCompleteWithoutMissingMaskV2
 from ac import TransformerNoPosAutoCompleteWithoutMissingWithMaskV2
 from ac import TransformerNoPosAutoCompleteWithoutMissingMaskAttention
 from ac import TransformerAdaptInput
+from ac import TransformerAdaptInputWithPosition
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -212,7 +213,8 @@ feature_dim = dsets['train'].shape[1]
 #         indim=feature_dim,
 #     )
 
-core = TransformerAdaptInput()
+# core = TransformerAdaptInput()
+core = TransformerAdaptInputWithPosition()
 
 # core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
 #         indim=feature_dim,
@@ -268,7 +270,7 @@ if not args.impute_using_saved:
 
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
-                    if model.__class__.__name__ == 'TransformerAdaptInput':
+                    if model.__class__.__name__ == 'TransformerAdaptInput' or model.__class__.__name__ == 'TransformerAdaptInputWithPosition':
                         yhat,_ = model(masked_data)
                     else:
                         yhat = model(masked_data)
@@ -378,7 +380,10 @@ if args.impute_data_file or args.save_imputed or args.quality:
             datarow[sim_mask] = 0
 
         with torch.no_grad():
-            yhat = model(datarow)
+            if model.__class__.__name__ == 'TransformerAdaptInput' or model.__class__.__name__ == 'TransformerAdaptInputWithPosition':
+                yhat,_ = model(datarow)
+            else:
+                yhat = model(datarow)
         sind = CONT_BINARY_SPLIT
         yhat = torch.cat([yhat[:, :sind], torch.sigmoid(yhat[:, sind:])], dim=1)
 
