@@ -18,7 +18,7 @@ import json
 with open('/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/results_r2_v2.json') as json_file:
     data_ae_with_mask = json.load(json_file)
 # %%
-with open('/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/results_r2_v2.json') as json_file:
+with open('/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/results_r2_v3.json') as json_file:
     data_ae = json.load(json_file)
 # %%
 with open('/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/results_r2.json') as json_file:

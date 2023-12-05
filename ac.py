@@ -1,4 +1,5 @@
 
+#%%
 import torch
 import numpy as np
 import torch.nn as nn
@@ -433,3 +434,152 @@ class TransformerNoPosAutoCompleteWithoutMissingMaskAttention(nn.Module):
         x = self.fc(x)
 
         return x, attention_scores
+# %%
+class TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(nn.Module):
+    def __init__(self,
+                 indim=80,  # input data dimension
+                 n_layers=2,  # number of layers in the transformer encoder
+                 n_head=2,  # number of attention heads in the transformer encoder
+                 d_model=64,  # dimension of the transformer encoder input and output
+                 dim_feedforward=256,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 dim_ff_penultimate=32,
+                 verbose=False):
+        super().__init__()
+
+        encoder_layers = TransformerEncoderLayer(2, n_head, dim_feedforward, dropout, batch_first=True)
+        self.transformer_encoder = TransformerEncoder(encoder_layers, n_layers)
+
+        # self.fc = nn.Linear(indim, indim)
+        # self.fc = nn.Linear(1, dim_feedforward)
+        # Add a feedforward layer
+        self.feedforward = nn.Sequential(
+            nn.Linear(2, dim_ff_penultimate),
+            nn.ReLU(),
+            nn.Linear(dim_ff_penultimate, 2),  # Adjust the output size to 1
+            nn.ReLU()
+        )
+        self.final_fc = nn.Linear(indim*2, indim)
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        # concatenated_data = torch.cat((x, y), dim=0)
+        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        # x = concatenated_data.unsqueeze(-1)
+        # x = x.permute(1, 0, 2)
+        x = self.transformer_encoder(tensor)
+        
+        # x = self.feedforward(x)
+        # reshape x to be of batch size x 
+        x = x.reshape(x.shape[0], -1)
+
+        x = self.final_fc(x)
+        return x
+# %%
+####### NEw code based on the ATM method
+class TransformerCompatibleInput(nn.Module):
+	# make transformer compatible input
+    """
+    A PyTorch module that creates a weight vector and multiplies it with the input tensor.
+
+    Args:
+        output_size (int): The size of the output tensor.
+
+    Returns:
+        torch.Tensor: The output tensor after being multiplied by the weight vector.
+    """
+    def __init__(self, input_dim, output_size):
+        super().__init__()
+        self.output_size = output_size
+
+        # create the weight vector and register it as a parameter
+        self.weight = nn.Parameter(torch.randn(input_dim, output_size))
+
+    def forward(self, x):
+        """
+        x is a 1D tensor of size (batch_size, input_size, 1)
+        The forward pass multiplies the input tensor by the weight vector to produce the output tensor.
+        of size (batch_size, input_size, output_size)
+        """
+        # multiply the input tensor by the weight vector
+        x = torch.matmul(x, self.weight)
+
+        return x
+#%%
+
+
+
+# Define the input tensors
+# input_tensor = torch.zeros(32, 300, 2)
+
+# transformer_input = TransformerCompatibleInput(input_dim=2, output_size=64)
+
+# # Pass the input tensor through the TransformerCompatibleInput module
+# output = transformer_input(input_tensor)
+
+# # Print the output and its shape
+# print(output)
+# print(output.shape)
+    
+# %%
+class TransformerAdaptInput(nn.Module):
+    def __init__(self,
+                 indim=2,  # input data dimension
+                 n_layers=2,  # number of layers in the transformer encoder
+                 n_head=8,  # number of attention heads in the transformer encoder
+                 d_model=32,  # dimension of the transformer encoder input and output
+                 dim_feedforward=128,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False):
+        super().__init__()
+
+        # make a transformer compatible input
+        self.transformer_input = TransformerCompatibleInput(indim, d_model)
+        # Create the transformer encoder with multi-head attention
+        self.transformer_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=n_head,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout
+            ),
+            num_layers=n_layers
+        )
+
+        # Linear layer
+        self.fc = nn.Linear(d_model, 1)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+
+        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        # concatenated_data = torch.cat((x, y), dim=0)
+        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        # make this to be transformer compatible
+        tensor = self.transformer_input(tensor)
+
+        # x = concatenated_data.unsqueeze(-1)
+        # x = x.permute(1, 0, 2)
+        x = self.transformer_encoder(tensor)
+
+        # Forward pass through the transformer encoder
+        attention_scores = []  # List to store attention scores for each layer
+
+        for layer in self.transformer_encoder.layers:
+            # Get attention scores from each layer
+            x, attention_score = layer.self_attn(x, x, x)
+            attention_scores.append(attention_score)
+
+        # Apply linear layer
+        x = self.fc(x)
+        # remove the last dimension
+        x = x.squeeze(-1)
+
+        return x, attention_scores
+# %%

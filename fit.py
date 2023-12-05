@@ -14,7 +14,7 @@ class args:
     data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
-    batch_size = 1024
+    batch_size = 64
     val_split = 0.8
     device = 'cuda:0'
     epochs = 10
@@ -134,6 +134,7 @@ from ac import TransformerNoPosAutoCompleteWithMissingMask
 from ac import TransformerNoPosAutoCompleteWithoutMissingMaskV2
 from ac import TransformerNoPosAutoCompleteWithoutMissingWithMaskV2
 from ac import TransformerNoPosAutoCompleteWithoutMissingMaskAttention
+from ac import TransformerAdaptInput
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -211,12 +212,14 @@ feature_dim = dsets['train'].shape[1]
 #         indim=feature_dim,
 #     )
 
+core = TransformerAdaptInput()
+
 # core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
 #         indim=feature_dim,
 #     )
-core = TransformerNoPosAutoCompleteWithoutMissingMaskAttention(
-        indim=feature_dim,
-    )
+# core = TransformerNoPosAutoCompleteWithoutMissingMaskAttention(
+#         indim=feature_dim,
+#     )
 model = core.to(args.device)
 
 print('Model:', model.__class__.__name__)
@@ -265,7 +268,10 @@ if not args.impute_using_saved:
 
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
-                    yhat = model(masked_data)
+                    if model.__class__.__name__ == 'TransformerAdaptInput':
+                        yhat,_ = model(masked_data)
+                    else:
+                        yhat = model(masked_data)
                     sind = CONT_BINARY_SPLIT
 
                     l_cont, l_binary = torch.zeros(1), torch.zeros(1)
@@ -448,3 +454,5 @@ if args.impute_data_file or args.save_imputed or args.quality:
         template.to_csv(save_table_name)
 
 print('done')
+
+# %%
