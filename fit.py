@@ -206,15 +206,15 @@ feature_dim = dsets['train'].shape[1]
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
 #         indim=feature_dim,
 #     )
-# core = TransformerNoPosAutoCompleteWithMissingMask(
-#         indim=feature_dim,
-#     )
+core = TransformerNoPosAutoCompleteWithMissingMask(
+        indim=feature_dim,
+    )
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
 #         indim=feature_dim,
 #     )
 
 # core = TransformerAdaptInput()
-core = TransformerAdaptInputWithPosition()
+# core = TransformerAdaptInputWithPosition()
 
 # core = TransformerNoPosAutoCompleteWithoutMissingWithMaskV2(
 #         indim=feature_dim,
@@ -222,6 +222,7 @@ core = TransformerAdaptInputWithPosition()
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskAttention(
 #         indim=feature_dim,
 #     )
+# core = TransformerAdaptInputWithPosition()
 model = core.to(args.device)
 
 print('Model:', model.__class__.__name__)

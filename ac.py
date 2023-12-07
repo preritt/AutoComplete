@@ -295,7 +295,7 @@ class TransformerAutoCompleteWithMissingMask(nn.Module):
         x = self.fc(x)
         return x
 
-
+#%%
 class PositionalEncoding(nn.Module):
     def __init__(self, d_model, dropout=0.1, max_len=5000):
         super(PositionalEncoding, self).__init__()
@@ -544,7 +544,8 @@ class TransformerAdaptInput(nn.Module):
                 d_model=d_model,
                 nhead=n_head,
                 dim_feedforward=dim_feedforward,
-                dropout=dropout
+                dropout=dropout,
+                batch_first = True
             ),
             num_layers=n_layers
         )
@@ -650,7 +651,78 @@ class TransformerAdaptInputWithPosition(nn.Module):
                 d_model=d_model,
                 nhead=n_head,
                 dim_feedforward=dim_feedforward,
-                dropout=dropout
+                dropout=dropout,
+                batch_first = True
+            ),
+            num_layers=n_layers
+        )
+
+        # Linear layer
+        self.fc = nn.Linear(d_model, 1)
+        self.d_model = d_model
+        # add a layer normalization layer
+        self.layer_norm = nn.LayerNorm(d_model)
+
+        if verbose:
+            print('In D', indim)
+            print('Out D', indim)
+
+    def forward(self, x):
+
+        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        # concatenated_data = torch.cat((x, y), dim=0)
+        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        # make this to be transformer compatible
+        tensor = self.transformer_input(tensor)*math.sqrt(self.d_model)
+        tensor = self.layer_norm(tensor)
+        tensor = tensor + self.positional_encoding(tensor)
+        
+
+        # x = concatenated_data.unsqueeze(-1)
+        # x = x.permute(1, 0, 2)
+        x = self.transformer_encoder(tensor)
+
+        # Forward pass through the transformer encoder
+        attention_scores = []  # List to store attention scores for each layer
+
+        for layer in self.transformer_encoder.layers:
+            # Get attention scores from each layer
+            x, attention_score = layer.self_attn(x, x, x)
+            attention_scores.append(attention_score)
+
+        # Apply linear layer
+        x = self.fc(x)
+        # remove the last dimension
+        x = x.squeeze(-1)
+
+        return x, attention_scores
+
+# %%
+class HybridTransformerAutoencoder(nn.Module):
+    def __init__(self,
+                 indim=2,  # input data dimension
+                 n_layers=2,  # number of layers in the transformer encoder
+                 n_head=8,  # number of attention heads in the transformer encoder
+                 d_model=32,  # dimension of the transformer encoder input and output
+                 dim_feedforward=128,  # dimension of the feedforward network in the transformer encoder
+                 dropout=0.1,  # dropout rate in the transformer encoder
+                 verbose=False,
+                 positional_encoding=PositionalEncoding,
+                 max_seq_len=1028,
+                 index_end_cont_feature = 100):
+        super().__init__()
+
+        # make a transformer compatible input
+        self.transformer_input = TransformerCompatibleInput(indim, d_model)
+        self.positional_encoding = positional_encoding(d_model, max_seq_len)
+        # Create the transformer encoder with multi-head attention
+        self.transformer_encoder = nn.TransformerEncoder(
+            nn.TransformerEncoderLayer(
+                d_model=d_model,
+                nhead=n_head,
+                dim_feedforward=dim_feedforward,
+                dropout=dropout,
+                batch_first = True
             ),
             num_layers=n_layers
         )

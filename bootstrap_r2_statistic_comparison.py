@@ -8,12 +8,12 @@ sys.path.append('AutoComplete/')
 
 # AutoComplete/datasets/allFeatureDataTransformerWithMask  AutoComplete/datasets/allFeatureDataAEOnly
 class args:
-	data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/ptest.csv'
+	data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptest.csv'
 	simulated_data_file = 'datasets/phenotypes/data_test.csv'
-	imputed_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p_Pub_v3.csv'
+	imputed_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p_Pub_v3.csv'
 	mask_data_file = '/u/project/sriram/ulzee/imp/data/mdd/masks/mask_test_OBS099_0.csv'
 	num_bootstraps = 100
-	saveas = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataAEOnly/results_r2_v3.json'
+	saveas = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/results_r2_v3.json'
 #%%
 # parser = argparse.ArgumentParser(description='AutoComplete')
 # parser.add_argument('data_file', type=str, help='Ground truth data. CSV file where rows are samples and columns correspond to features.')
