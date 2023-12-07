@@ -11,17 +11,17 @@ import sys
 class args:
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptra in.csv'
     # AutoComplete/datasets/allFeatureDataTransformerV2 AutoComplete/datasets/allFeatureDataTransformerWithMaskV2
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 64
     val_split = 0.8
     device = 'cuda:0'
-    epochs = 10
+    epochs = 100
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/data_fit_imputed.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
