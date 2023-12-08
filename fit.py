@@ -210,10 +210,15 @@ feature_dim = dsets['train'].shape[1]
 # core = TransformerNoPosAutoCompleteWithMissingMask(
 #         indim=feature_dim,
 #     )
-
+    #   depth=1,
+    #             width=1,
+    #             n_multiples=0
 core = HybridTransformerAutoencoder(
         number_continuous_features = len(contin_features),
         number_categorical_features = len(binary_features),
+        depth=args.depth,
+        width=1/args.encoding_ratio,
+        n_multiples=0
     )
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
 #         indim=feature_dim,

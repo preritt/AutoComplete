@@ -710,7 +710,11 @@ class HybridTransformerAutoencoder(nn.Module):
                  positional_encoding=PositionalEncoding,
                  max_seq_len=1028,
                 number_continuous_features = 100,
-                number_categorical_features = 10):
+                number_categorical_features = 10,
+                depth=1,
+                width=1,
+                n_multiples=0
+                 ):
         super().__init__()
 
         # make a transformer compatible input
@@ -742,7 +746,7 @@ class HybridTransformerAutoencoder(nn.Module):
 
         # define the autoencoder with mask AutoCompleteWithMissingMask
         self.autoencoder = AutoCompleteWithMissingMask(indim=number_categorical_features, 
-                                                       width=1, n_depth=1, n_multiples=0,
+                                                       width=width, n_depth=depth, n_multiples=n_multiples,
                                                         nonlin=lambda dim: torch.nn.LeakyReLU(inplace=True), verbose=False)
 
         self.fc_all = nn.Sequential(
