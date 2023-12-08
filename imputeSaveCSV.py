@@ -11,7 +11,7 @@ import sys
 class args: 
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformer/ptrain.csv'  AutoComplete/datasets/allFeatureData
     # AutoComplete/datasets/allFeatureDataAEOnly
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/ptrain.csv'
     id_name = 'FID'
     lr = 0.01
     batch_size = 1024
@@ -20,12 +20,12 @@ class args:
     epochs = 50
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
-    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptrain.pth'
+    impute_using_saved = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/ptrain.pth'
     # impute_using_saved = '/u/project/sriram/ulzee/imp/ulzee_weights_2023dec4.pth'
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p_Pub_v3.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/data_fit_imputed_AEWithMAskOrigFeatUlzee_test_allFeatureData_0p1_p_Pub_v3.csv'
     encoding_ratio = 1
     depth = 1
-    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureDataTransformerV2/ptest.csv'
+    impute_data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/ptest.csv'
     copymask_amount = 0.5
     num_torch_threads = 8
     simulate_missing = 0.01

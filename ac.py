@@ -709,12 +709,15 @@ class HybridTransformerAutoencoder(nn.Module):
                  verbose=False,
                  positional_encoding=PositionalEncoding,
                  max_seq_len=1028,
-                 index_end_cont_feature = 100):
+                number_continuous_features = 100,
+                number_categorical_features = 10):
         super().__init__()
 
         # make a transformer compatible input
         self.transformer_input = TransformerCompatibleInput(indim, d_model)
         self.positional_encoding = positional_encoding(d_model, max_seq_len)
+        self.number_continuous_features = number_continuous_features
+        self.number_categorical_features = number_categorical_features
         # Create the transformer encoder with multi-head attention
         self.transformer_encoder = nn.TransformerEncoder(
             nn.TransformerEncoderLayer(
@@ -728,26 +731,50 @@ class HybridTransformerAutoencoder(nn.Module):
         )
 
         # Linear layer
-        self.fc = nn.Linear(d_model, 1)
+        # self.fc = nn.Linear(d_model, 1)
+        self.fc = nn.Sequential(
+            nn.Linear(d_model, 1),
+            # nn.LeakyReLU()
+        )
         self.d_model = d_model
         # add a layer normalization layer
         self.layer_norm = nn.LayerNorm(d_model)
+
+        # define the autoencoder with mask AutoCompleteWithMissingMask
+        self.autoencoder = AutoCompleteWithMissingMask(indim=number_categorical_features, 
+                                                       width=1, n_depth=1, n_multiples=0,
+                                                        nonlin=lambda dim: torch.nn.LeakyReLU(inplace=True), verbose=False)
+
+        self.fc_all = nn.Sequential(
+            nn.Linear(number_continuous_features + number_categorical_features, 
+                      number_continuous_features + number_categorical_features),
+            nn.LeakyReLU(),
+            nn.Linear(number_continuous_features + number_categorical_features, 
+                      number_continuous_features + number_categorical_features),
+        )
 
         if verbose:
             print('In D', indim)
             print('Out D', indim)
 
     def forward(self, x):
+        # get the continuous and categorical features
+        x_continuous = x[:, :self.number_continuous_features]
+        x_categorical = x[:, self.number_continuous_features:]
+        # get location of missing values
+        y_continuous = torch.where(x_continuous == 0, torch.zeros_like(x_continuous), torch.ones_like(x_continuous))
+        # y_categorical = torch.where(x_categorical == 0, torch.zeros_like(x_categorical), torch.ones_like(x_categorical))
 
-        y = torch.where(x == 0, torch.zeros_like(x), torch.ones_like(x))
+        discrete_output = self.autoencoder(x_categorical)
+
+        # y = torch.where(x_continuous == 0, torch.zeros_like(x_continuous), torch.ones_like(x_continuous))
         # concatenated_data = torch.cat((x, y), dim=0)
-        tensor = torch.cat((x.unsqueeze(-1), y.unsqueeze(-1)), dim=-1)
+        tensor = torch.cat((x_continuous.unsqueeze(-1), y_continuous.unsqueeze(-1)), dim=-1)
         # make this to be transformer compatible
         tensor = self.transformer_input(tensor)*math.sqrt(self.d_model)
         tensor = self.layer_norm(tensor)
         tensor = tensor + self.positional_encoding(tensor)
         
-
         # x = concatenated_data.unsqueeze(-1)
         # x = x.permute(1, 0, 2)
         x = self.transformer_encoder(tensor)
@@ -764,5 +791,10 @@ class HybridTransformerAutoencoder(nn.Module):
         x = self.fc(x)
         # remove the last dimension
         x = x.squeeze(-1)
+
+        # concatenate x with discrete_output
+        x = torch.cat((x, discrete_output), dim=1)
+        # x = self.fc_all(x)
+
 
         return x, attention_scores

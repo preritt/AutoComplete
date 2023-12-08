@@ -11,17 +11,17 @@ import sys
 class args:
     # data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/allFeatureData/ptra in.csv'
     # AutoComplete/datasets/allFeatureDataTransformerV2 AutoComplete/datasets/allFeatureDataTransformerWithMaskV2
-    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/ptrain.csv'
+    data_file = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithHybridMask/ptrain.csv'
     id_name = 'FID'
-    lr = 0.01
+    lr = 0.03
     batch_size = 64
     val_split = 0.8
     device = 'cuda:0'
-    epochs = 100
+    epochs = 10
     momentum = 0.9
     # impute_using_saved = 'datasets/mate_male/data_fit.pth'
     impute_using_saved = None
-    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithMask/data_fit_imputed.csv'
+    output = '/u/scratch/p/pterway/UCLAProjects/ulzeeAutocomplete/AutoComplete/datasets/transformerIncorrectWithHybridMask/data_fit_imputed.csv'
     encoding_ratio = 1
     depth = 1
     impute_data_file = None
@@ -136,6 +136,7 @@ from ac import TransformerNoPosAutoCompleteWithoutMissingWithMaskV2
 from ac import TransformerNoPosAutoCompleteWithoutMissingMaskAttention
 from ac import TransformerAdaptInput
 from ac import TransformerAdaptInputWithPosition
+from ac import HybridTransformerAutoencoder
 from dataset import CopymaskDataset
 #%%
 tab = pd.read_csv(args.data_file).set_index(args.id_name)
@@ -206,8 +207,13 @@ feature_dim = dsets['train'].shape[1]
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
 #         indim=feature_dim,
 #     )
-core = TransformerNoPosAutoCompleteWithMissingMask(
-        indim=feature_dim,
+# core = TransformerNoPosAutoCompleteWithMissingMask(
+#         indim=feature_dim,
+#     )
+
+core = HybridTransformerAutoencoder(
+        number_continuous_features = len(contin_features),
+        number_categorical_features = len(binary_features),
     )
 # core = TransformerNoPosAutoCompleteWithoutMissingMaskV2(
 #         indim=feature_dim,
@@ -231,6 +237,7 @@ if not args.impute_using_saved:
     cont_crit = nn.MSELoss()
     binary_crit = nn.BCEWithLogitsLoss()
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=args.momentum)
+    # optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr)
     scheduler = ReduceLROnPlateau(optimizer, factor=0.5, threshold=1e-10, patience=20)
 
     def get_lr():
@@ -271,7 +278,9 @@ if not args.impute_using_saved:
 
                 optimizer.zero_grad()
                 with torch.set_grad_enabled(phase == 'train'):
-                    if model.__class__.__name__ == 'TransformerAdaptInput' or model.__class__.__name__ == 'TransformerAdaptInputWithPosition':
+                    if (model.__class__.__name__ == 'TransformerAdaptInput' or 
+                        model.__class__.__name__ == 'TransformerAdaptInputWithPosition' or
+                        model.__class__.__name__ == 'HybridTransformerAutoencoder'):
                         yhat,_ = model(masked_data)
                     else:
                         yhat = model(masked_data)
@@ -381,7 +390,10 @@ if args.impute_data_file or args.save_imputed or args.quality:
             datarow[sim_mask] = 0
 
         with torch.no_grad():
-            if model.__class__.__name__ == 'TransformerAdaptInput' or model.__class__.__name__ == 'TransformerAdaptInputWithPosition':
+            if (model.__class__.__name__ == 'TransformerAdaptInput' or
+                 model.__class__.__name__ == 'TransformerAdaptInputWithPosition' or
+                    model.__class__.__name__ == 'HybridTransformerAutoencoder'):
+                 
                 yhat,_ = model(datarow)
             else:
                 yhat = model(datarow)
